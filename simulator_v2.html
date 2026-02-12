@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予算シミュレーター & 製品詳細</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            /* Slate 900 */
+            --secondary: #334155;
+            /* Slate 700 */
+            --accent: #1e40af;
+            /* Blue 800 */
+            --accent-light: #f8fafc;
+            /* Slate 50 */
+            --highlight: #b45309;
+            /* Amber 700 */
+            --text: #334155;
+            /* Slate 700 */
+            --border: #e2e8f0;
+            /* Slate 200 */
+            --bg-slide: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+            background: #cbd5e1;
+            /* Background outside slide */
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            background: white;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 50px 70px;
+            box-sizing: border-box;
+            background: var(--bg-slide);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        h2 {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 700;
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 15px;
+            margin: 0 0 30px 0;
+            letter-spacing: 0.05em;
+        }
+
+        h3 {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 15px;
+        }
+
+        .content {
+            width: 100%;
+            height: auto;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 20px;
+            height: auto;
+            box-sizing: border-box;
+        }
+
+        .two-columns {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            height: auto;
+        }
+
+        .col {
+            flex: 1;
+            height: auto;
+        }
+
+        .text-accent {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .text-highlight {
+            color: var(--highlight);
+            font-weight: bold;
+        }
+
+        .text-small {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .product-image-container {
+            width: 100%;
+            height: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .product-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        /* Table Styling */
+        .spec-table,
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .spec-table th,
+        .spec-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .spec-table th {
+            color: var(--secondary);
+            font-weight: 600;
+            width: 30%;
+            border-right: 1px solid var(--border);
+            background: #f8fafc;
+        }
+
+        .spec-table tr:last-child td,
+        .spec-table tr:last-child th {
+            border-bottom: none;
+        }
+
+        .comparison-table th {
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+            font-weight: 700;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .comparison-table td {
+            text-align: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table .product-name {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .comparison-table .price {
+            font-family: 'Roboto';
+            font-weight: 500;
+        }
+
+        .comparison-table .recommend {
+            background: #f0f9ff !important;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: 1px solid var(--primary);
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: rgba(15, 23, 42, 0.8);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Noto Sans JP';
+            font-size: 0.9rem;
+            backdrop-filter: blur(4px);
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: rgba(15, 23, 42, 1);
+        }
+
+        button:disabled {
+            background: rgba(100, 116, 139, 0.5);
+            cursor: default;
+        }
+
+        /* Slide Number */
+        .slide-number {
+            position: absolute;
+            bottom: 25px;
+            right: 30px;
+            left: auto;
+            font-family: 'Roboto';
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        .nav-link {
+            display: inline-block;
+            margin: 0 4px;
+            padding: 2px 8px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--accent);
+            border-radius: 3px;
+        }
+
+        .nav-link:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Data Bar */
+        .data-bar-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .data-bar-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+        }
+
+        .data-bar-bg {
+            width: 100%;
+            height: 30px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .data-bar-fill {
+            height: 100%;
+            background: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            color: white;
+            padding-right: 15px;
+            font-size: 0.9rem;
+        }
+
+        .data-bar-empty {
+            height: 100%;
+            background: #94a3b8;
+            display: flex;
+            align-items: center;
+            padding-left: 15px;
+            color: white;
+            font-size: 0.9rem;
+            flex: 1;
+        }
+
+        .bg-pos {
+            background-color: #dbeafe;
+        }
+
+        .bg-neg {
+            background-color: #fee2e2;
+        }
+
+        /* Interactive Slide Styles */
+        .case-container {
+            display: flex;
+            height: 450px;
+            gap: 20px;
+        }
+
+        .case-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .case-menu-btn {
+            padding: 18px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #334155;
+            /* Explicitly override global button color */
+            width: 100%;
+            /* Ensure full width */
+        }
+
+        .case-menu-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .case-menu-btn.active {
+            background: #eff6ff;
+            border-color: #2563eb;
+            border-left: 5px solid #2563eb;
+        }
+
+        .case-menu-btn strong {
+            display: block;
+            margin: 0;
+            font-size: 1.3rem;
+            color: #0f172a;
+        }
+
+        /* Legacy support if h4 is used */
+        .case-menu-btn h4 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: #0f172a;
+        }
+
+        .case-menu-btn span {
+            display: block;
+            margin: 5px 0 0 0;
+            font-size: 1.05rem;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        /* Legacy support if p is used */
+        .case-menu-btn p {
+            margin: 5px 0 0 0;
+            font-size: 1.05rem;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .case-detail {
+            flex: 2;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .case-detail h3 {
+            font-size: 1.8rem;
+            /* Enlarged */
+            color: #0f172a;
+            /* Darkened */
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 12px;
+            margin-top: 0;
+            line-height: 1.3;
+        }
+
+        .case-section {
+            margin-bottom: 20px;
+        }
+
+        .case-section h4 {
+            font-size: 1.3rem;
+            /* Enlarged */
+            color: #1e293b;
+            /* Darkened */
+            margin-bottom: 10px;
+            font-weight: 800;
+            border-left: 5px solid #cbd5e1;
+            padding-left: 10px;
+        }
+
+        .case-section p {
+            margin: 0;
+            line-height: 1.8;
+            /* Increased spacing */
+            color: #0f172a;
+            /* Darkened */
+            background: #f8fafc;
+            padding: 15px;
+            /* Increased padding */
+            border-radius: 8px;
+            font-size: 1.2rem;
+            /* Globally enlarged */
+        }
+
+        .case-link-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .case-link-btn:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="slide-container">
+
+        <!-- Slide 1: Budget Simulator -->
+        <div class="slide active">
+            <h2>予算シミュレーター (リアルタイム計算)</h2>
+            <div class="content" style="height: 100%; display: flex; flex-direction: column;">
+                <p class="text-center" style="margin-bottom: 10px; font-size: 1rem;">
+                    予算100万円・20施設での購入台数をシミュレーションします。<br>
+                    <span class="text-small">※スマホユーザーはアプリ利用(無料)と仮定</span>
+                </p>
+                <div style="display: flex; gap: 30px; flex: 1; min-height: 0;">
+                    <div class="card"
+                        style="flex: 1; padding: 15px; background: #f8fafc; display: flex; flex-direction: column;">
+                        <h3
+                            style="font-size: 1.2rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-top: 0; margin-bottom: 15px;">
+                            パラメーター設定</h3>
+                        <div style="display: flex; gap: 20px; flex: 1;">
+                            <div style="flex: 4; display: flex; flex-direction: column;">
+                                <div style="margin-bottom: 10px;">
+                                    <label
+                                        style="font-weight: bold; display: block; margin-bottom: 4px; font-size: 0.9rem;">デバイス選択</label>
+                                    <select id="simDevice"
+                                        style="width: 100%; padding: 8px; font-size: 0.95rem; border-radius: 4px; border: 1px solid #cbd5e1;"
+                                        onchange="updateSim()">
+                                        <option value="1100">山佐 EX-150 (約¥1,100)</option>
+                                        <option value="800">Tanita PD-647 (約¥800)</option>
+                                        <option value="2000">Tanita FB-732 (約¥2,000)</option>
+                                        <option value="5100">Tanita AM-161 (約¥5,100)</option>
+                                        <option value="6050">Tanita AM-150 (約¥6,050)</option>
+                                        <option value="2100">Omron HJ-325 (約¥2,100)</option>
+                                        <option value="4600">Omron HJA-405T (約¥4,600)</option>
+                                        <option value="20000">Omron HJA-750C (約¥20,000)</option>
+                                        <option value="12800">Fitbit Inspire 3 (約¥12,800)</option>
+                                    </select>
+                                </div>
+                                <div
+                                    style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: white; padding: 10px; min-height: 0;">
+                                    <img id="simDeviceImg" src="" alt="Device Image"
+                                        style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                </div>
+                                <div id="simDevicePrice"
+                                    style="text-align: center; font-size: 1.4rem; font-weight: bold; color: #334155; margin-top: 10px;">
+                                </div>
+                                <button id="btnDetail"
+                                    style="margin-top: 15px; width: 100%; background: #334155; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px;">
+                                    詳細を見る <span style="font-size: 1.2em;">→</span>
+                                </button>
+                            </div>
+                            <div
+                                style="flex: 6; display: flex; flex-direction: column; justify-content: flex-start; gap: 15px;">
+                                <div>
+                                    <label
+                                        style="font-weight: bold; display: block; margin-bottom: 4px; font-size: 0.9rem;">対象施設数:
+                                        <span id="valFacilities" class="text-accent">20</span>ヶ所</label>
+                                    <input type="range" id="rngFacilities" min="1" max="50" step="1" value="20"
+                                        style="width: 100%; margin: 5px 0;" oninput="updateSim()">
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-weight: bold; display: block; margin-bottom: 4px; font-size: 0.9rem;">1施設あたりの人数:
+                                        <span id="valUsers" class="text-accent">50</span>名</label>
+                                    <input type="range" id="rngUsers" min="10" max="100" step="5" value="50"
+                                        style="width: 100%; margin: 5px 0;" oninput="updateSim()">
+                                    <div class="text-small text-right" style="font-size: 0.85rem;">総対象者数: <span
+                                            id="valTotalUsers">1000</span>名</div>
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-weight: bold; display: block; margin-bottom: 4px; font-size: 0.9rem;">スマホユーザー率:
+                                        <span id="valRatio" class="text-accent">50</span>%</label>
+                                    <input type="range" id="rngRatio" min="0" max="100" step="5" value="50"
+                                        style="width: 100%; margin: 5px 0;" oninput="updateSim()">
+                                    <div class="text-small"
+                                        style="display: flex; justify-content: space-between; margin-top: 2px; font-size: 0.85rem;">
+                                        <span>📱スマホ: <span id="valSmart">500</span>名</span>
+                                        <span>📝非スマホ: <span id="valNonSmart"
+                                                style="color: #d97706; font-weight: bold;">500</span>名</span>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <a id="linkOfficial" href="#" target="_blank"
+                                        style="display: block; width: 100%; padding: 8px; background: #64748b; color: white; text-align: center; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.9rem; transition: background 0.2s;">
+                                        公式サイトを見る <span style="font-size: 0.9em;">↗</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card"
+                        style="flex: 1; padding: 15px; text-align: center; display: flex; flex-direction: column; justify-content: flex-start;">
+                        <h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 10px;">計算結果 (デバイス購入費)</h3>
+
+                        <div
+                            style="margin-bottom: 15px; padding: 10px; background: #f1f5f9; border-radius: 4px; text-align: left;">
+                            <label
+                                style="font-size: 0.9rem; font-weight: bold; color: #334155; display: flex; justify-content: space-between; align-items: center;">
+                                予算設定
+                                <span id="valBudgetDisplay" style="color: #0f172a; font-size: 1.1rem;">¥1,000,000</span>
+                            </label>
+                            <input type="range" id="rngBudget" min="1000000" max="5000000" step="100000" value="1000000"
+                                style="width: 100%; margin-top: 5px; cursor: pointer;" oninput="updateSim()">
+                        </div>
+
+                        <div style="margin: 10px 0;">
+                            <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0;">必要予算</div>
+                            <div id="simCost"
+                                style="font-size: 3rem; font-weight: bold; color: #334155; line-height: 1.2;">¥500,000
+                            </div>
+                        </div>
+                        <div
+                            style="width: 100%; height: 24px; background: #e2e8f0; border-radius: 12px; overflow: hidden; position: relative; margin-bottom: 8px;">
+                            <div id="simBar"
+                                style="width: 50%; height: 100%; background: #10b981; transition: width 0.3s, background 0.3s;">
+                            </div>
+                            <div
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; color: #334155;">
+                                <span id="simBarLabel">予算上限: ¥1,000,000</span>
+                            </div>
+                        </div>
+                        <div id="simMessage"
+                            style="font-weight: bold; font-size: 1.1rem; min-height: 1.5em; color: #10b981; margin-bottom: 10px;">
+                            予算内です (残り
+                            ¥500,000)</div>
+                        <div
+                            style="margin-top: auto; border-top: 1px dashed #cbd5e1; padding-top: 15px; display: flex; gap: 10px; align-items: flex-end;">
+                            <div style="flex: 1; text-align: center;">
+                                <p style="margin: 0 0 2px 0; color: #64748b; font-size: 0.85rem;">総購入台数</p>
+                                <p
+                                    style="font-size: 1.5rem; margin: 0; font-weight: bold; color: #d97706; line-height: 1.1;">
+                                    <span id="valTotalDevices">500</span><span
+                                        style="font-size: 1rem; color: #64748b;">台</span>
+                                </p>
+                            </div>
+                            <div style="width: 1px; background: #cbd5e1; height: 40px; align-self: center;"></div>
+                            <div style="flex: 1; text-align: center;">
+                                <p style="margin: 0 0 2px 0; color: #64748b; font-size: 0.85rem;">1施設平均</p>
+                                <p
+                                    style="font-size: 1.5rem; margin: 0; font-weight: bold; color: #b45309; line-height: 1.1;">
+                                    <span id="valPerFacility">25</span><span
+                                        style="font-size: 1rem; color: #64748b;">台</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">1 / 21</div>
+        </div>
+
+        <!-- Slide 2: Smartphone Usage Data -->
+        <div class="slide">
+            <h2>参考データ: 高齢者のスマホ保有率 (2024年)</h2>
+            <div class="content">
+                <p style="margin-bottom: 30px; font-size: 1.2rem;">
+                    高齢者層でもスマホ普及は進んでいますが、<span style="color:#d97706; font-weight:bold;">80代以上では約4割が非保有</span>です。<br>
+                    この層は要介りやすく管理ニーズが最も高い層と重なります。
+                </p>
+                <div
+                    style="width: 80%; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div class="data-bar-container">
+                        <div class="data-bar-label"><span>60代</span><span>90% 保有</span></div>
+                        <div class="data-bar-bg">
+                            <div class="data-bar-fill" style="width: 90%;">スマホ 90%</div>
+                            <div class="data-bar-empty">なし 10%</div>
+                        </div>
+                    </div>
+                    <div class="data-bar-container">
+                        <div class="data-bar-label"><span>70代</span><span>80% 保有</span></div>
+                        <div class="data-bar-bg">
+                            <div class="data-bar-fill" style="width: 80%;">スマホ 80%</div>
+                            <div class="data-bar-empty">なし 20%</div>
+                        </div>
+                    </div>
+                    <div class="data-bar-container">
+                        <div class="data-bar-label"><span>80代以上 (要注意層)</span><span style="color:#d97706;">60% 保有</span>
+                        </div>
+                        <div class="data-bar-bg">
+                            <div class="data-bar-fill" style="width: 60%; background: #64748b;">60%</div>
+                            <div class="data-bar-empty" style="background: #d97706; font-size: 1.1em;">⚠️ 非スマホ 40%</div>
+                        </div>
+                    </div>
+                    <p style="text-align: right; font-size: 0.9rem; color: #64748b; margin-top: 20px;">出典: モバイル社会研究所
+                        2024年調査 / 総務省通信利用動向調査シミュレーション</p>
+                </div>
+            </div>
+            <div class="slide-number">2 / 21</div>
+        </div>
+
+        <!-- Slide 3: Product Comparison Table -->
+        <div class="slide">
+            <h2>デバイス比較表</h2>
+            <div class="content">
+                <table class="comparison-table">
+                    <tr>
+                        <th>製品名</th>
+                        <th>参考価格</th>
+                        <th>メモリ機能</th>
+                        <th>通信機能</th>
+                        <th>研究適性</th>
+                        <th>詳細</th>
+                    </tr>
+                    <tr>
+                        <td class="product-name">山佐 EX-150</td>
+                        <td class="price bg-pos">¥1,100</td>
+                        <td class="bg-neg">なし</td>
+                        <td class="bg-neg">なし</td>
+                        <td class="bg-neg">△ 低</td>
+                        <td><a class="nav-link" onclick="goToSlide(3)">詳細へ</a></td>
+                    </tr>
+                    <tr>
+                        <td class="product-name">Tanita PD-647</td>
+                        <td class="price bg-pos">¥800</td>
+                        <td class="bg-neg">当日のみ</td>
+                        <td class="bg-neg">なし</td>
+                        <td class="bg-neg">△ 低</td>
+                        <td><a class="nav-link" onclick="goToSlide(4)">詳細へ</a></td>
+                    </tr>
+                    <tr>
+                        <td class="product-name">Tanita FB-732</td>
+                        <td class="price bg-pos">¥2,000</td>
+                        <td class="bg-pos">14日間</td>
+                        <td class="bg-neg">なし</td>
+                        <td class="bg-pos">○ 中</td>
+                        <td><a class="nav-link" onclick="goToSlide(5)">詳細へ</a></td>
+                    </tr>
+                    <tr>
+                        <td class="product-name">Tanita AM-150</td>
+                        <td class="price">¥6,050</td>
+                        <td class="bg-pos">31日間</td>
+                        <td class="bg-pos">FeliCa</td>
+                        <td class="bg-pos">◎ 高</td>
+                        <td><a class="nav-link" onclick="goToSlide(6)">詳細へ</a></td>
+                    </tr>
+                    <tr>
+                        <td class="product-name">Tanita AM-161</td>
+                        <td class="price">¥5,100</td>
+                        <td class="bg-pos">14日間</td>
+                        <td class="bg-pos">Bluetooth</td>
+                        <td class="bg-pos">◎ 高</td>
+                        <td><a class="nav-link" onclick="goToSlide(7)">詳細へ</a></td>
+                    </tr>
+                    <tr>
+                        <td class="product-name">Omron HJ-325</td>
+                        <td class="price bg-pos">¥2,100</td>
+                        <td class="bg-pos">7日間</td>
+                        <td class="bg-neg">なし</td>
+                        <td class="bg-pos">○ 中</td>
+                        <td><a class="nav-link" onclick="goToSlide(8)">詳細へ</a></td>
+                    </tr>
+                    <tr class="recommend">
+                        <td class="product-name">Omron HJA-405T</td>
+                        <td class="price">¥4,600</td>
+                        <td class="bg-pos">14日間</td>
+                        <td class="bg-pos">Bluetooth</td>
+                        <td class="bg-pos">◎ 高</td>
+                        <td><a class="nav-link" onclick="goToSlide(9)">詳細へ</a></td>
+                    </tr>
+                    <tr>
+                        <td class="product-name">Omron HJA-750C</td>
+                        <td class="price bg-neg">¥20,000</td>
+                        <td class="bg-pos">45日間</td>
+                        <td class="bg-pos">NFC/BLE</td>
+                        <td class="bg-pos">◎◎ 最高</td>
+                        <td><a class="nav-link" onclick="goToSlide(10)">詳細へ</a></td>
+                    </tr>
+                    <tr>
+                        <td class="product-name">Fitbit Inspire 3</td>
+                        <td class="price bg-neg">¥12,800</td>
+                        <td class="bg-pos">無制限(クラウド)</td>
+                        <td class="bg-pos">Bluetooth</td>
+                        <td class="bg-pos">◎ 高</td>
+                        <td><a class="nav-link" onclick="goToSlide(11)">詳細へ</a></td>
+                    </tr>
+                </table>
+                <p style="margin-top: 20px; font-size: 0.9rem; color: #64748b;">
+                    ※研究ユースにはメモリ容量と通信機能のバランスが重要です。
+                </p>
+            </div>
+            <div class="slide-number">3 / 21</div>
+        </div>
+
+        <!-- Slide 4: Yamasa EX-150 -->
+        <div class="slide">
+            <h2>製品詳細: 山佐 EX-150</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container">
+                            <img src="./images/04.png" class="product-image" alt="Yamasa EX-150">
+                        </div>
+                        <div class="card" style="padding: 20px; text-align: center;">
+                            <h3 style="margin:0; color: #334155;">参考価格: ¥1,100</h3>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>山佐時計計器</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>最低機能モデル</strong><br>機能を絞り込んだシンプル設計</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td>なし / 当日のみ</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td>なし</td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td>コストは抑えられるが、記録漏れリスクが高い。<br>研究用としては不向き</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">4 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Tanita PD-647 -->
+        <div class="slide">
+            <h2>製品詳細: Tanita PD-647</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container">
+                            <img src="./images/05.png" class="product-image" alt="Tanita PD-647">
+                        </div>
+                        <div class="card" style="padding: 20px; text-align: center;">
+                            <h3 style="margin:0; color: #334155;">参考価格: ¥800</h3>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>タニタ (Tanita)</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>大画面・腰装着タイプ</strong><br>文字が大きく見やすい。</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td>当日のみ</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td>なし</td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td>視認性は良いが、過去データの振り返りができないため、毎日の転記が必須</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">5 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Tanita FB-732 -->
+        <div class="slide">
+            <h2>製品詳細: Tanita FB-732</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container">
+                            <img src="./images/06.png" class="product-image" alt="Tanita FB-732"
+                                onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div style=\'color:#94a3b8; font-size:1.2rem; text-align:center;\'>画像準備中<br><span style=\'font-size:3rem;\'>📦</span></div>';">
+                        </div>
+                        <div class="card" style="padding: 20px; text-align: center;">
+                            <h3 style="margin:0; color: #334155;">参考価格: ¥2,000</h3>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>タニタ (Tanita)</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>14日間メモリ付き低価格モデル</strong><br>3Dセンサー搭載。累計歩数99,999,999歩表示（億歩計）。</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td><strong>過去14日間</strong><br>歩数・歩行距離・消費カロリー等</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td>なし</td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td>低価格でメモリ付き。通信機能はないが、手帳転記運用にはコスパ最良。</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">6 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Tanita AM-150 -->
+        <div class="slide">
+            <h2>製品詳細: Tanita AM-150 カロリズム</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container"><img src="./images/07.png" class="product-image"
+                                alt="Tanita AM-150"></div>
+                        <div class="card" style="padding: 20px; text-align: center;">
+                            <h3 style="margin:0; color: #334155;">参考価格: ¥6,050</h3>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>タニタ (Tanita)</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>FeliCa搭載活動量計</strong><br>NFC通信でワンタッチデータ転送。ヘルスプラネット連携。</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td><strong>内部メモリ31日間</strong><br>画面表示7日間</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td><strong>FeliCa (NFC)</strong></td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td>長期メモリとNFC通信。研究用途に適する。</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">7 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Tanita AM-161 -->
+        <div class="slide">
+            <h2>製品詳細: Tanita AM-161 カロリズム</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container"><img src="./images/08.png" class="product-image"
+                                alt="Tanita AM-161"></div>
+                        <div class="card" style="padding: 20px; text-align: center;">
+                            <h3 style="margin:0; color: #334155;">参考価格: ¥5,100</h3>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>タニタ (Tanita)</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>Bluetooth活動量計</strong><br>活動を4分類で自動判定。</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td><strong>14日間</strong><br>本体7日間とアプリ送信14日間</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td><strong>Bluetooth (BLE)</strong></td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td>BLE対応でスマホ連携しやすい。活動分類が研究データとして有用。</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">8 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Omron HJ-325 -->
+        <div class="slide">
+            <h2>製品詳細: Omron HJ-325</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container"><img src="./images/09.png" class="product-image"
+                                alt="Omron HJ-325"></div>
+                        <div class="card" style="padding: 20px; text-align: center;">
+                            <h3 style="margin:0; color: #334155;">参考価格: ¥2,100</h3>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>オムロン</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>3Dセンサー搭載</strong><br>ポケットやバッグに入れても計測可能。</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td><strong>7日間</strong><br>歩数、歩行距離、消費カロリー</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td>なし</td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td>低価格でメモリ付き。手帳転記運用にコスパ良好。</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">9 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Omron HJA-405T -->
+        <div class="slide">
+            <h2>製品詳細: Omron HJA-405T <span class="text-accent">(推奨)</span></h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container"><img src="./images/10.png" class="product-image"
+                                alt="Omron HJA-405T"></div>
+                        <div class="card"
+                            style="padding: 20px; text-align: center; border-color: #b45309; background: #fffbeb;">
+                            <h3 style="margin:0; color: #b45309;">参考価格: ¥4,600 (推奨)</h3>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>オムロン ヘルスケア</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>Bluetooth搭載、高精度3Dセンサー</strong><br>活動量の自動分類。</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td><strong>14日間</strong><br>10分毎の歩数、カロリー、METs値</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td><strong>Bluetooth (BLE)</strong><br>OMRON connect連携</td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td><span class="text-accent"
+                                        style="font-weight:bold;">最有力候補。</span><br>過去データを確認しやすく手帳転記運用に最適。</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">10 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Omron HJA-750C -->
+        <div class="slide">
+            <h2>製品詳細: Omron HJA-750C Active style Pro</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container">
+                            <img src="./images/11.png" class="product-image" alt="Omron HJA-750C"
+                                onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div style=\'color:#94a3b8; font-size:1.2rem; text-align:center;\'>画像準備中<br><span style=\'font-size:3rem;\'>🔬</span></div>';">
+                        </div>
+                        <div class="card"
+                            style="padding: 20px; text-align: center; border-color: #dc2626; background: #fef2f2;">
+                            <h3 style="margin:0; color: #dc2626;">参考価格: ¥20,000</h3>
+                            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #b91c1c;">研究専用機器</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>オムロン ヘルスケア</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>研究専用活動量計</strong><br>10秒毎にMETs記録。ダグラスバッグ法との比較検証済み。</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td><strong>最大45日間</strong><br>10秒間隔の高精度データ記録</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td><strong>NFC / BLE</strong><br>専用通信トレーとソフトウェアでPC転送</td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td>研究用途に<span class="text-accent" style="font-weight:bold;">最高水準</span>。精度とメモリ容量ともに最優秀。
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">11 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Fitbit Inspire 3 -->
+        <div class="slide">
+            <h2>製品詳細: Fitbit Inspire 3</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="product-image-container"><img src="./images/12.png" class="product-image"
+                                alt="Fitbit Inspire 3"></div>
+                        <div class="card" style="padding: 20px; text-align: center;">
+                            <h3 style="margin:0; color: #334155;">参考価格: ¥12,800</h3>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <table class="spec-table">
+                            <tr>
+                                <th>メーカー</th>
+                                <td>Fitbit (Google)</td>
+                            </tr>
+                            <tr>
+                                <th>特徴</th>
+                                <td><strong>リストバンド型スマートトラッカー</strong><br>歩数、心拍数、睡眠の自動記録。</td>
+                            </tr>
+                            <tr>
+                                <th>メモリ機能</th>
+                                <td><strong>無制限 (クラウド)</strong><br>Fitbitアプリと自動同期</td>
+                            </tr>
+                            <tr>
+                                <th>通信機能</th>
+                                <td><strong>Bluetooth</strong><br>スマートフォン常時接続</td>
+                            </tr>
+                            <tr>
+                                <th>評価</th>
+                                <td>データの自動収集が可能。ただしスマホとアプリが必須。高齢者には操作ハードルあり。</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">12 / 21</div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <div style="margin-bottom: 5px;">
+                    <a class="nav-link" onclick="goToSlide(0)"
+                        style="border-color: #334155; color: #334155;">シミュレーター</a>
+                    <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+                </div>
+                <div>
+                    <a class="nav-link" onclick="goToSlide(3)">Yamasa</a>
+                    <a class="nav-link" onclick="goToSlide(4)">PD-647</a>
+                    <a class="nav-link" onclick="goToSlide(5)">FB-732</a>
+                    <a class="nav-link" onclick="goToSlide(6)">AM-150</a>
+                    <a class="nav-link" onclick="goToSlide(7)">AM-161</a>
+                    <br>
+                    <a class="nav-link" onclick="goToSlide(8)">HJ-325</a>
+                    <a class="nav-link" onclick="goToSlide(9)">HJA-405T</a>
+                    <a class="nav-link" onclick="goToSlide(10)">HJA-750C</a>
+                    <a class="nav-link" onclick="goToSlide(11)">Fitbit</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Data Collection Flow -->
+        <div class="slide">
+            <h2>運用フロー: データ収集から医療連携まで</h2>
+            <div class="content">
+                <div style="display: flex; gap: 30px; align-items: flex-start;">
+                    <div style="flex: 2;">
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="color: #1e3a5f; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">データ収集フロー
+                            </h3>
+                            <div style="display: flex; gap: 20px; margin-top: 15px;">
+                                <div
+                                    style="flex: 1; background: #eff6ff; padding: 15px; border-radius: 4px; border-left: 4px solid #1e40af;">
+                                    <h4 style="margin: 0 0 10px 0;">📱 スマホユーザー</h4>
+                                    <ol style="margin: 0; padding-left: 20px; font-size: 1rem;">
+                                        <li>専用アプリで記録</li>
+                                        <li>または手帳に記録</li>
+                                        <li>週1回フォーム送信</li>
+                                    </ol>
+                                </div>
+                                <div
+                                    style="flex: 1; background: #fffbeb; padding: 15px; border-radius: 4px; border-left: 4px solid #b45309;">
+                                    <h4 style="margin: 0 0 10px 0;">📝 非スマホユーザー</h4>
+                                    <ol style="margin: 0; padding-left: 20px; font-size: 1rem;">
+                                        <li>歩数計で歩数確認</li>
+                                        <li>手帳に毎日記録</li>
+                                        <li>週1回フォーム送信</li>
+                                    </ol>
+                                </div>
+                            </div>
+                            <div
+                                style="background: #f0fdf4; padding: 15px; border-radius: 4px; border: 1px solid #16a34a; margin-top: 15px;">
+                                <h4 style="margin: 0 0 10px 0; color: #15803d;">🔄 VitalLink連携（今後導入予定）</h4>
+                                <p style="margin: 0; font-size: 1rem;">週1回自動送信 → 主治医・連携病院で確認</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">13 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+        <!-- Slide 14: Cost Estimation -->
+        <div class="slide">
+            <h2>費用試算（100名規模）</h2>
+            <div class="content">
+                <div style="display: flex; gap: 30px;">
+                    <div style="flex: 1;">
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="color: #1e3a5f; border-bottom: 2px solid #f59e0b; padding-bottom: 10px;">初期費用
+                            </h3>
+                            <table class="spec-table" style="font-size: 1rem;">
+                                <tr>
+                                    <th>項目</th>
+                                    <th>金額</th>
+                                </tr>
+                                <tr>
+                                    <td>歩数計（HJA-405T）100台</td>
+                                    <td style="text-align: right;">¥460,000</td>
+                                </tr>
+                                <tr>
+                                    <td>予備機（10台）</td>
+                                    <td style="text-align: right;">¥46,000</td>
+                                </tr>
+                                <tr>
+                                    <td>説明資材印刷</td>
+                                    <td style="text-align: right;">¥50,000</td>
+                                </tr>
+                                <tr style="background: #eff6ff;">
+                                    <th>合計</th>
+                                    <th style="text-align: right; color: #2563eb;">約¥560,000</th>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="color: #1e3a5f; border-bottom: 2px solid #10b981; padding-bottom: 10px;">月額運用費
+                            </h3>
+                            <table class="spec-table" style="font-size: 1rem;">
+                                <tr>
+                                    <th>項目</th>
+                                    <th>金額</th>
+                                </tr>
+                                <tr>
+                                    <td>VitalLink（5施設）</td>
+                                    <td style="text-align: right;">¥25,000</td>
+                                </tr>
+                                <tr>
+                                    <td>消耗品（電池等）</td>
+                                    <td style="text-align: right;">¥6,000</td>
+                                </tr>
+                                <tr style="background: #dcfce7;">
+                                    <th>合計</th>
+                                    <th style="text-align: right; color: #16a34a;">約¥31,000/月</th>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">14 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+        <!-- Slide 15: Patient Usage Flow -->
+        <div class="slide">
+            <h2>🚶 歩数計の使い方（患者さん向け）</h2>
+            <div class="content">
+                <div style="display: flex; justify-content: center; gap: 20px;">
+                    <div class="card" style="padding: 20px; text-align: center; flex:1;">
+                        <h3 style="color: #2563eb;">1. 受け取る</h3>
+                        <p>病院で歩数計を受け取ります</p>
+                    </div>
+                    <div class="card" style="padding: 20px; text-align: center; flex:1;">
+                        <h3 style="color: #16a34a;">2. 持ち歩く</h3>
+                        <p>ポケットやバッグに入れて毎日持ち歩く</p>
+                    </div>
+                    <div class="card" style="padding: 20px; text-align: center; flex:1;">
+                        <h3 style="color: #f59e0b;">3. 記録・報告</h3>
+                        <p>毎日記録し、週1回フォームで報告</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">15 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+        <!-- Slide 16: Patient Guidance -->
+        <div class="slide">
+            <h2>患者向け説明事項</h2>
+            <div class="content">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <div class="card" style="padding: 20px; border-left: 5px solid #2563eb;">
+                        <h3 style="color: #2563eb; margin-top: 0;">① 歩数計の説明</h3>
+                        <ul>
+                            <li>機種: HJA-405T</li>
+                            <li>装着: ポケット/バッグ</li>
+                            <li>電池: 約3ヶ月</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="padding: 20px; border-left: 5px solid #16a34a;">
+                        <h3 style="color: #16a34a; margin-top: 0;">② 入力方法</h3>
+                        <ul>
+                            <li>スマホあり: アプリ/手帳</li>
+                            <li>スマホなし: 手帳のみ</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">16 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+        <!-- Slide 17: Roadmap -->
+        <div class="slide">
+            <h2>今後の展開ロードマップ</h2>
+            <div class="content">
+                <div style="display: flex; gap: 20px;">
+                    <div class="card" style="flex:1; padding:20px; border-top: 5px solid #64748b;">
+                        <h3>Phase 1</h3>
+                        <p>手動報告運用開始</p>
+                    </div>
+                    <div class="card" style="flex:1; padding:20px; border-top: 5px solid #1e40af;">
+                        <h3>Phase 2</h3>
+                        <p>VitalLink導入・自動連携</p>
+                    </div>
+                    <div class="card" style="flex:1; padding:20px; border-top: 5px solid #15803d;">
+                        <h3>Phase 3</h3>
+                        <p>バイタル連携（血圧・体重）</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">17 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+        <!-- Slide 18: Vital Link Concept -->
+        <div class="slide">
+            <h2>Vital Link: 地域医療連携の神経系</h2>
+            <div class="content">
+                <div class="card" style="padding: 20px; margin-bottom: 20px; background: #eff6ff;">
+                    <h3 style="color: #1e40af;">地域包括ケアの「神経系」としての役割</h3>
+                    <p>Vital Linkは、単なる連絡帳ではなく、患者バイタル、スタッフ間の連絡、画像共有を一元化するプラットフォームです。</p>
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <div class="card" style="flex: 1; padding: 15px;">
+                        <h4>従来の課題 (Analog)</h4>
+                        <ul>
+                            <li>電話・FAXでの連絡</li>
+                            <li>情報共有のタイムラグ</li>
+                            <li>多職種間の連携不足</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="flex: 1; padding: 15px; border: 2px solid #2563eb;">
+                        <h4>Vital Link導入後 (Digital)</h4>
+                        <ul>
+                            <li>リアルタイムチャット</li>
+                            <li>バイタル自動共有</li>
+                            <li>多職種同時連携</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">18 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+        <!-- Slide 19: Features -->
+        <div class="slide">
+            <h2>Vital Link: 主な機能</h2>
+            <div class="content">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div class="card" style="padding: 15px; border-top: 4px solid #f59e0b;">
+                        <h3>連絡・共有</h3>
+                        <p>多職種連携SNS。</p>
+                        <ul>
+                            <li>タイムライン形式</li>
+                            <li>画像・動画共有</li>
+                            <li>既読確認機能</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="padding: 15px; border-top: 4px solid #10b981;">
+                        <h3>バイタル管理</h3>
+                        <p>IoT機器と自動連携。</p>
+                        <ul>
+                            <li>血圧・体重・歩数</li>
+                            <li>グラフ自動生成</li>
+                            <li>異常値アラート</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="padding: 15px; border-top: 4px solid #3b82f6;">
+                        <h3>ビデオ通話</h3>
+                        <p>遠隔診療・カンファレンス。</p>
+                        <ul>
+                            <li>Zoom連携</li>
+                            <li>患者宅との接続</li>
+                            <li>多地点接続</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">19 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+        <!-- Slide 20: Cost & Security -->
+        <div class="slide">
+            <h2>Vital Link: 費用とセキュリティ</h2>
+            <div class="content">
+                <div style="display: flex; gap: 20px;">
+                    <div class="card" style="flex: 1; padding: 20px;">
+                        <h3 style="color: #dc2626;">費用体系</h3>
+                        <table class="spec-table">
+                            <tr>
+                                <th>対象</th>
+                                <th>費用</th>
+                            </tr>
+                            <tr>
+                                <td>一般ユーザー<br>(医療・介護職/患者)</td>
+                                <td style="color: #16a34a; font-weight: bold;">無料</td>
+                            </tr>
+                            <tr>
+                                <td>管理者</td>
+                                <td>¥5,000 / 月</td>
+                            </tr>
+                        </table>
+                        <p class="text-small">※アカデミア価格等は別途相談</p>
+                    </div>
+                    <div class="card" style="flex: 1; padding: 20px;">
+                        <h3 style="color: #1e40af;">セキュリティ</h3>
+                        <ul style="line-height: 1.8;">
+                            <li><strong>2要素認証 (2FA)</strong>: ログイン時の本人確認</li>
+                            <li><strong>3省2ガイドライン準拠</strong>: 医療情報ガイドライン対応</li>
+                            <li><strong>国内サーバー</strong>: 国内データセンターで管理</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">20 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+        <!-- Slide 21: Case Studies -->
+        <div class="slide">
+            <h2>導入事例 (VitalLink Interactive)</h2>
+            <div class="content">
+                <div class="case-container">
+                    <div class="case-menu">
+                        <button class="case-menu-btn active" onclick="loadCaseStudy(0)"><strong>徳島県</strong><br><span
+                                class="text-small">徳島市医師会</span></button>
+                        <button class="case-menu-btn" onclick="loadCaseStudy(1)"><strong>富山県</strong><br><span
+                                class="text-small">厚生連高岡病院</span></button>
+                        <button class="case-menu-btn" onclick="loadCaseStudy(2)"><strong>千葉県</strong><br><span
+                                class="text-small">松戸市医師会</span></button>
+                        <button class="case-menu-btn" onclick="loadCaseStudy(3)"><strong>東京都</strong><br><span
+                                class="text-small">新宿区 (きんと雲)</span></button>
+                        <button class="case-menu-btn" onclick="loadCaseStudy(4)"><strong>群馬県</strong><br><span
+                                class="text-small">前橋赤十字病院</span></button>
+                        <button class="case-menu-btn" onclick="loadCaseStudy(5)"><strong>北海道</strong><br><span
+                                class="text-small">南空知 (由仁町)</span></button>
+                        <button class="case-menu-btn" onclick="loadCaseStudy(6)"><strong>茨城県</strong><br><span
+                                class="text-small">笠間市</span></button>
+                    </div>
+                    <div class="case-detail">
+                        <div id="caseDetailContent">
+                            <h3 style="color:#1e3a5f; margin-top:0;">徳島市医師会 ICT連携</h3>
+                            <p style="font-size:1.1rem; line-height:1.6;">地域包括ケアシステム「阿波あいネット」と連携。</p>
+                            <a href="http://www.tokushimashi-med.or.jp/renkei/vital_link.html" target="_blank"
+                                class="case-link-btn">🔗 関連・公式HPを見る</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">21 / 21</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <a class="nav-link" onclick="goToSlide(0)">シミュレーター</a>
+                <a class="nav-link" onclick="goToSlide(2)">比較表</a>
+            </div>
+        </div>
+
+    </div>
+
+    </div>
+
+    <div class="controls">
+        <button id="prevBtn" onclick="prevSlide()" disabled>← 前へ</button>
+        <button id="nextBtn" onclick="nextSlide()">次へ →</button>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+        const BUDGET = 1000000;
+
+        // Case Study Data & Logic (Detailed Version)
+        const vitalLinkCases = [
+            {
+                region: "徳島県徳島市",
+                org: "徳島県医師会",
+                func: "地域医療介護総合確保基金を活用した広域連携",
+                bg: "地域全体の多職種連携インフラの構築。徳島市医師会も運用に参加。",
+                result: "令和4年時点で多数の施設が登録され、地域全体のインフラとして定着。救急・終末期連携に貢献。",
+                issue: "補助金への依存度が高く、補助金終了後の継続的なコスト負担が課題。",
+                link: "http://www.tokushimashi-med.or.jp/"
+            },
+            {
+                region: "富山県高岡市",
+                org: "厚生連高岡病院",
+                func: "家族向けタブレット貸与、Zoom連携",
+                bg: "在宅緩和ケアにおける家族参加型の情報共有。コロナ禍でZoom面会・カンファレンスも導入。",
+                result: "家族の不安軽減と医療者との信頼関係向上。紙パスからの移行で利用職種が増加。",
+                issue: "家族によるタブレット操作の習熟支援が必要。",
+                link: "https://www.kouseiren-ta.or.jp/section/cooperation/index.html"
+            },
+            {
+                region: "千葉県松戸市",
+                org: "ACPタグ活用",
+                func: "「ACPタグ」を活用した連絡帳機能",
+                bg: "アドバンス・ケア・プランニングの実践。「ACPサポートチーム」による意思決定支援。",
+                result: "タグ機能で患者の価値観や意向を効率的に蓄積・共有。専門職の教育効果も。",
+                link: "https://www.matsudo-zaitaku.org/"
+            },
+            {
+                region: "東京都新宿区",
+                org: "新宿区医師会",
+                func: "専門分野別の相談ルーム (新宿きんと雲)",
+                bg: "専門医とかかりつけ医を繋ぐ機能分化。都市部の医療資源の最適配分を目指す。",
+                result: "かかりつけ医が専門医の知見を仰ぎやすくなり、地域医療の質が向上。",
+                issue: "他ツールとの乱立による多重入力負担。",
+                link: "http://www.shinjuku-med.or.jp/"
+            },
+            {
+                region: "群馬県前橋市",
+                org: "前橋赤十字病院",
+                func: "地域連携パス、連絡帳",
+                bg: "COPD患者の地域連携パスにおいて、病院の専門医が在宅チームをバックアップ。",
+                result: "訪問先からスマホで手軽に投稿・閲覧可能に。経験の浅いスタッフの安心感醸成。",
+                issue: "情報なし",
+                link: "https://www.maebashi.jrc.or.jp/"
+            },
+            {
+                region: "茨城県笠間市",
+                org: "救急車連携",
+                func: "救急車配備のタブレット活用",
+                bg: "意思疎通困難な高齢患者の情報を搬送時に迅速に把握 (※要確認: 一般的なICT活用の可能性あり)。",
+                result: "普段の状態と比較した迅速な判断が可能になり、搬送効率化に貢献。",
+                issue: "情報なし"
+            },
+            {
+                region: "北海道南空知",
+                org: "由仁町等 (南空知バイタルリンク)",
+                func: "タイムライン連絡帳、バイタルグラフ",
+                bg: "広域かつ過疎地における医療情報の流動性確保と安否確認。空知南部医師会が主導。",
+                result: "終末期患者の「食の楽しみ」支援など、温かい多職種連携を実現。",
+                issue: "情報なし",
+                link: "https://yuni-clinic.com/vital_link/"
+            }
+        ];
+
+        function initCaseStudy() {
+            const menu = document.getElementById('caseMenu'); // Note: HTML might need id="caseMenu" instead of class
+            // Let's check HTML. It has class="case-menu". We should use querySelector or getElementById if ID exists.
+            // Looking at previous HTML, it had class="case-menu". Let's adapt JS to match HTML structure better or rely on classes.
+            // Actually, in the detailed HTML I wrote earlier (Step 363), I used class="case-menu-btn" logic.
+            // Wait, the HTML (Step 417) has <div class="case-menu"> (no ID).
+            // So I should select by class.
+
+            const menuContainer = document.querySelector('.case-menu');
+            const detailContainer = document.querySelector('.case-detail');
+            if (!menuContainer || !detailContainer) return;
+
+            menuContainer.innerHTML = '';
+            vitalLinkCases.forEach((c, i) => {
+                const btn = document.createElement('button'); // Changed to button to match CSS
+                btn.className = 'case-menu-btn';
+                if (i === 0) btn.classList.add('active');
+                btn.innerHTML = `<strong>${c.region}</strong><br><span class="text-small">${c.org}</span>`;
+                btn.onclick = () => {
+                    document.querySelectorAll('.case-menu-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderCaseDetail(c);
+                };
+                menuContainer.appendChild(btn);
+            });
+
+            renderCaseDetail(vitalLinkCases[0]);
+        }
+
+        function renderCaseDetail(c) {
+            const detailContent = document.getElementById('caseDetailContent');
+            if (!detailContent) return;
+
+            detailContent.innerHTML = `
+                <h3>${c.region} <span style="font-size:1.3rem; color:#475569; font-weight:normal;">(${c.org})</span></h3>
+                <div class="case-section">
+                    <h4>💡 主な活用機能</h4>
+                    <p style="background:#eff6ff; color:#172554; font-weight:bold; border: 1px solid #dbeafe;">${c.func}</p>
+                </div>
+                <div class="case-section">
+                    <h4>🏁 導入背景</h4>
+                    <p style="background:#f8fafc; border: 1px solid #e2e8f0;">${c.bg}</p>
+                </div>
+                <div class="case-section">
+                    <h4>🏆 成果・評価</h4>
+                    <p style="background:#f0fdf4; color:#14532d; border: 1px solid #dcfce7;">${c.result}</p>
+                </div>
+                <div class="case-section">
+                     <h4>⚠️ 課題</h4>
+                    <p style="background:#fef2f2; color:#7f1d1d; border: 1px solid #fee2e2;">${c.issue || "特になし"}</p>
+                </div>
+                ${c.link ? `<div style="text-align:right; margin-top:20px;"><a href="${c.link}" target="_blank" class="case-link-btn">🔗 関連・公式HPを見る</a></div>` : ''}
+            `;
+        }
+
+        // Initialize Call
+        setTimeout(initCaseStudy, 100);
+
+        function updateSlides() {
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === currentSlide);
+            });
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === slides.length - 1;
+            document.getElementById('prevBtn').textContent = currentSlide === 0 ? '← 前へ' : '← 前へ';
+            document.getElementById('nextBtn').textContent = currentSlide === slides.length - 1 ? '次へ →' : '次へ →';
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) { currentSlide++; updateSlides(); }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) { currentSlide--; updateSlides(); }
+        }
+
+        function goToSlide(slideIndex) {
+            if (slideIndex >= 0 && slideIndex < slides.length) { currentSlide = slideIndex; updateSlides(); }
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        function updateSim() {
+            const deviceVal = document.getElementById('simDevice').value;
+            const price = parseInt(deviceVal);
+
+            // Image Update Logic
+            const deviceImages = {
+                "1100": "./images/04.png",
+                "800": "./images/05.png",
+                "2000": "./images/06.png", // Missing
+                "6050": "./images/07.png",
+                "5100": "./images/08.png",
+                "2100": "./images/09.png",
+                "4600": "./images/10.png",
+                "20000": "./images/11.png", // Missing
+                "12800": "./images/12.png"
+            };
+            const imgEl = document.getElementById('simDeviceImg');
+            if (imgEl) {
+                const newSrc = deviceImages[deviceVal];
+                if (newSrc) {
+                    imgEl.src = newSrc;
+                    imgEl.style.display = 'block';
+                } else {
+                    imgEl.style.display = 'none';
+                }
+            }
+
+            const priceEl = document.getElementById('simDevicePrice');
+            if (priceEl) {
+                priceEl.textContent = '単価: ¥' + price.toLocaleString();
+            }
+
+            // Link Detail Button
+            const deviceSlideMap = {
+                "1100": 3,
+                "800": 4,
+                "2000": 5,
+                "6050": 6,
+                "5100": 7,
+                "2100": 8,
+                "4600": 9,
+                "20000": 10,
+                "12800": 11
+            };
+            const btnDetail = document.getElementById('btnDetail');
+            if (btnDetail) {
+                btnDetail.onclick = function () {
+                    const targetIndex = deviceSlideMap[deviceVal];
+                    if (targetIndex !== undefined) goToSlide(targetIndex);
+                };
+            }
+
+
+
+            const facilities = parseInt(document.getElementById('rngFacilities').value);
+            const usersPerF = parseInt(document.getElementById('rngUsers').value);
+            const ratio = parseInt(document.getElementById('rngRatio').value);
+            const budget = parseInt(document.getElementById('rngBudget').value);
+
+            // Update Official Link
+            const officialUrls = {
+                "1100": "https://www.yamasa-tokei.co.jp/", // Yamasa (Top)
+                "800": "https://www.tanita.co.jp/", // Tanita (Top)
+                "2000": "https://www.tanita.co.jp/", // Tanita (Top)
+                "6050": "https://www.tanita.co.jp/", // Tanita (Top)
+                "5100": "https://www.tanita.co.jp/", // Tanita (Top)
+                "2100": "https://www.healthcare.omron.co.jp/", // Omron Healthcare (Top)
+                "4600": "https://www.healthcare.omron.co.jp/", // Omron Healthcare (Top)
+                "20000": "https://www.healthcare.omron.co.jp/", // Omron Healthcare (Top)
+                "12800": "https://store.google.com/jp/product/fitbit_inspire_3" // Fitbit (Google Store)
+            };
+            const linkOfficial = document.getElementById('linkOfficial');
+            if (linkOfficial) {
+                linkOfficial.href = officialUrls[deviceVal] || "#";
+            }
+
+            const totalUsers = facilities * usersPerF;
+            const smartUsers = Math.round(totalUsers * ratio / 100);
+            const nonSmartUsers = totalUsers - smartUsers;
+            const totalCost = nonSmartUsers * price;
+            const perFacility = Math.round(nonSmartUsers / facilities);
+
+            document.getElementById('valFacilities').textContent = facilities;
+            document.getElementById('valUsers').textContent = usersPerF;
+            document.getElementById('valTotalUsers').textContent = totalUsers;
+            document.getElementById('valRatio').textContent = ratio;
+            document.getElementById('valSmart').textContent = smartUsers;
+            document.getElementById('valNonSmart').textContent = nonSmartUsers;
+            document.getElementById('valTotalDevices').textContent = nonSmartUsers;
+            document.getElementById('valPerFacility').textContent = perFacility;
+
+            document.getElementById('simCost').textContent = '¥' + totalCost.toLocaleString();
+
+            // Update Budget UI
+            document.getElementById('valBudgetDisplay').textContent = '¥' + budget.toLocaleString();
+            const pct = Math.min(100, Math.round(totalCost / budget * 100));
+            const bar = document.getElementById('simBar');
+            const msg = document.getElementById('simMessage');
+            const barLabel = document.getElementById('simBarLabel');
+
+            bar.style.width = pct + '%';
+            if (barLabel) barLabel.textContent = '予算上限: ¥' + budget.toLocaleString();
+
+            if (totalCost <= budget) {
+                bar.style.background = '#10b981'; // Green
+                msg.textContent = '予算内です (残り ¥' + (budget - totalCost).toLocaleString() + ')';
+                msg.style.color = '#10b981';
+            } else {
+                bar.style.background = '#ef4444'; // Red
+                msg.textContent = '予算オーバーです (不足 ¥' + (totalCost - budget).toLocaleString() + ')';
+                msg.style.color = '#ef4444';
+            }
+        }
+
+
+
+
+        updateSim();
+        updateSlides();
+    </script>
+</body>
+
+</html>

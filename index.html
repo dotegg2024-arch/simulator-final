@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歩数データ収集システム 導入計画案（予算承認用）</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            /* Darker Slate */
+            --secondary: #334155;
+            /* Slate */
+            --accent: #2563eb;
+            /* Blue */
+            --accent-light: #eff6ff;
+            /* Light Blue */
+            --highlight: #f59e0b;
+            /* Amber */
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --white: #ffffff;
+            --table-header: #1e293b;
+            --table-row-even: #f1f5f9;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 60px;
+            box-sizing: border-box;
+            background: white;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 40px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Slide Content Styling */
+        h1 {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            color: var(--secondary);
+            margin-bottom: 40px;
+            font-weight: normal;
+        }
+
+        h2 {
+            font-size: 2.4rem;
+            color: var(--primary);
+            border-bottom: 4px solid var(--accent);
+            padding-bottom: 15px;
+            margin-bottom: 40px;
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        .content {
+            width: 90%;
+            max-width: 1200px;
+            font-size: 1.4rem;
+            line-height: 1.6;
+            height: 80%;
+            /* Ensure content takes up space for distribution */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            /* Align to top */
+        }
+
+        /* Executive Summary Box */
+        .exec-summary {
+            background: #eff6ff;
+            border-left: 8px solid var(--accent);
+            padding: 30px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+
+        .exec-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 15px;
+        }
+
+        .exec-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .exec-label {
+            font-weight: bold;
+            color: var(--secondary);
+            width: 25%;
+        }
+
+        .exec-value {
+            width: 70%;
+            font-weight: bold;
+        }
+
+        /* Layouts */
+        .two-columns {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            height: 100%;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        /* Cards */
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .card h3 {
+            color: var(--accent);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+        }
+
+        /* Device Images */
+        .device-image {
+            width: 100%;
+            height: 220px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        /* Lists */
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 12px;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        li::before {
+            content: "✔";
+            color: var(--accent);
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .warning-list li::before {
+            content: "⚠";
+            color: var(--highlight);
+        }
+
+        /* Process Flow */
+        .flow-step {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .flow-number {
+            background: var(--accent);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            font-size: 20px;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        /* Tables - Improved */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        th,
+        td {
+            border: 1px solid #cbd5e1;
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--table-header);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--table-row-even);
+        }
+
+        .highlight-row td {
+            background-color: #fff7ed;
+            color: #c2410c;
+            font-weight: 700;
+            border-top: 2px solid #fdba74;
+        }
+
+        .sub-header td {
+            background-color: #e2e8f0;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        /* Utilities */
+        .text-accent {
+            color: var(--accent);
+        }
+
+        .text-highlight {
+            color: var(--highlight);
+        }
+
+        .text-small {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .b-bottom {
+            border-bottom: 2px solid var(--accent);
+            display: inline-block;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Schedule Timeline */
+        .timeline {
+            position: relative;
+            margin-top: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #e2e8f0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 80px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 36px;
+            top: 5px;
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 50%;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .timeline-content h4 {
+            margin: 0 0 5px 0;
+            color: var(--primary);
+        }
+
+        .timeline-content p {
+            margin: 0;
+            color: #64748b;
+        }
+
+        /* Procurement Box */
+        .procurement-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .procurement-title {
+            color: #15803d;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        /* Flex improvements */
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="slide-container">
+
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <h1>歩数データ収集システム<br>導入計画・予算承認案</h1>
+            <p class="subtitle">高齢者層を含む大規模研究における<br>ハイブリッドデータ収集基盤の構築</p>
+            <div
+                style="margin-top: 60px; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 30px; width: 60%;">
+                <p><strong>起案日:</strong> 2026年1月22日</p>
+                <p><strong>申請区分:</strong> 新規システム導入 / 研究機器購入</p>
+            </div>
+            <div class="slide-number">1 / 18</div>
+        </div>
+
+        <!-- Slide 2: Executive Summary -->
+        <div class="slide">
+            <h2>1. エグゼクティブサマリー</h2>
+            <div class="content">
+                <div class="exec-summary">
+                    <div class="exec-row">
+                        <div class="exec-label">事業目的</div>
+                        <div class="exec-value">200～500名規模の研究対象者に対し、デジタルデバイドを解消しつつ高精度な歩数データを長期収集する。</div>
+                    </div>
+                    <div class="exec-row">
+                        <div class="exec-label">解決策</div>
+                        <div class="exec-value">
+                            スマホ保有者と非保有者を組み合わせた<strong>「ハイブリッド収集モデル」</strong>を軸に、最適なプラットフォーム・デバイスを選定する。
+                        </div>
+                    </div>
+                    <div class="exec-row">
+                        <div class="exec-label">検討対象</div>
+                        <div class="exec-value">
+                            <strong>Platform:</strong> YaDoc / SOH / Welby / Cloud<br>
+                            <strong>Device:</strong> Omron (HJA-405T) / Fitbit (Inspire 3)
+                        </div>
+                    </div>
+                    <div class="exec-row">
+                        <div class="exec-label">予算規模</div>
+                        <div class="exec-value text-accent">306万円 ～ 705万円 (定価ベース比較)</div>
+                    </div>
+                </div>
+                <p>本資料では、複数の候補案（プラットフォーム・デバイス）を比較・提示します。費用対効果と運用リスクを踏まえ、最適な組み合わせをご判断ください。</p>
+            </div>
+            <div class="slide-number">2 / 18</div>
+        </div>
+
+        <!-- Slide 3: Device Details (Moved) -->
+        <div class="slide">
+            <h2>2. 候補デバイス詳細</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col card">
+                        <h3 style="border-bottom: 2px solid #2563eb; padding-bottom: 10px;"><a
+                                href="https://www.healthcare.omron.co.jp/product/hja/hja-405t.html"
+                                target="_blank">Omron HJA-405T</a></h3>
+                        <img src="file:///C:/Users/scdc/.gemini/antigravity/brain/61e9ec38-2c7c-4901-b727-b873ce3fd899/uploaded_image_1_1769039634322.png"
+                            alt="Omron HJA-405T" class="device-image">
+                        <ul style="font-size: 1rem;">
+                            <li><strong>特徴:</strong> <span class="text-accent">非スマホ層の命綱（画面確認）</span></li>
+                            <li><strong>メモリ:</strong> 画面7日 / 内部14日</li>
+                            <li><strong>電池:</strong> CR2032 (約3ヶ月)</li>
+                            <li><strong>役割:</strong> 本体画面で過去データを振り返れるため、手帳転記運用に最適。</li>
+                        </ul>
+                    </div>
+                    <div class="col card">
+                        <h3 style="border-bottom: 2px solid #2563eb; padding-bottom: 10px;"><a
+                                href="https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjG5uT0wI2LAxXBlK8BHX4iN0gQFnoECBEQAQ&url=https%3A%2F%2Fstore.google.com%2Fjp%2Fproduct%2Ffitbit_inspire_3%3Fhl%3Dja&usg=AOvVaw0U1qA9U1T2U1X4nU1Z1G1u&opi=89978449"
+                                target="_blank">Fitbit Inspire 3</a></h3>
+                        <img src="file:///C:/Users/scdc/.gemini/antigravity/brain/61e9ec38-2c7c-4901-b727-b873ce3fd899/uploaded_image_0_1769039634322.png"
+                            alt="Fitbit Inspire 3" class="device-image">
+                        <ul style="font-size: 1rem;">
+                            <li><strong>特徴:</strong> <span class="text-accent">装着ストレスフリー</span></li>
+                            <li><strong>メモリ:</strong> 詳細7日 / 合計30日</li>
+                            <li><strong>電池:</strong> 充電式 (最大10日間)</li>
+                            <li><strong>役割:</strong> スマホ連携必須。30日分保持されるため、同期忘れリスクを極小化。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">3 / 18</div>
+        </div>
+
+        <!-- Slide 4: Communication Platform (MCS) - NEW PILLAR BASIS -->
+        <div class="slide">
+            <h2>3. 前提：医療・介護連携のコミュニケーション基盤</h2>
+            <div class="content">
+                <p style="font-size: 1.3rem; margin-bottom: 30px;">
+                    本プロジェクトでは、医療側から対象者への連絡手段（テキストベース）として<br>
+                    <strong>「MCS (Medical Care Station)」等</strong>の活用を前提としています。
+                </p>
+
+                <div class="card"
+                    style="background: #f8fafc; border-left: 8px solid #2563eb; padding: 30px; margin-bottom: 30px;">
+                    <h3 style="color: #1e293b; font-size: 1.6rem; border-bottom: none; margin-bottom: 10px;">
+                        コミュニケーションの1本目の柱</h3>
+                    <p style="font-size: 1.4rem;">
+                        <strong>医療スタッフ ⇔ 対象者（患者）</strong>
+                    </p>
+                    <ul style="font-size: 1.2rem; margin-top: 20px;">
+                        <li>テキストメッセージによる日常的な見守り・連絡</li>
+                        <li>緊急時の連絡手段</li>
+                        <li><span class="text-accent">歩数データ収集もこの「繋がり」の上で運用される</span></li>
+                    </ul>
+                </div>
+
+                <div class="text-center" style="color: #64748b; font-size: 1.1rem;">
+                    この基盤の上で、どのように「データ」を収集するか？<br>
+                    <strong>3つの運用柱</strong>で構成します。
+                </div>
+            </div>
+            <div class="slide-number">4 / 18</div>
+        </div>
+
+        <!-- Slide 5: Background & Challenges -->
+        <div class="slide">
+            <h2>4. 背景と課題</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <h3>背景：高齢者を含む長期データの必要性</h3>
+                        <ul>
+                            <li>健康寿命延伸に向けたエビデンス構築には、日常生活における正確な活動量データが不可欠。</li>
+                            <li>特に疾患リスクの高い高齢者層のデータは重要度が高いものの、IT機器への不慣れさが障壁となりやすい。</li>
+                        </ul>
+                    </div>
+                    <div class="col">
+                        <div class="card" style="background: #fff1f2; border-color: #fda4af;">
+                            <h3 style="color: #be123c;">現状の課題</h3>
+                            <ul class="warning-list">
+                                <li><strong>データの断絶:</strong> 紙の記録だけでは、詳細な日次推移や分析用データのデジタル化に膨大な工数がかかる。</li>
+                                <li><strong>デジタルデバイド:</strong> すべての対象者にスマホアプリを強要すると、脱落率が高まる恐れがある。</li>
+                                <li><strong>機器コスト:</strong> 高機能すぎるデバイスは予算圧迫の要因となる。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">5 / 18</div>
+        </div>
+
+        <!-- Slide 6: Solution Concept (3 Pillars) -->
+        <div class="slide">
+            <h2>5. 解決策：3つの運用柱 (データ収集モデル)</h2>
+            <div class="content">
+                <p style="font-size: 1.3rem; text-align: center; margin-bottom: 30px;">
+                    対象者のITリテラシーと環境に合わせ、<br>
+                    <strong>「スマホ」「デジタルデバイス」「手書き/アナログ」</strong>の3層で全対象者をカバーします。
+                </p>
+
+                <div style="display: flex; gap: 20px; height: 60%;">
+                    <!-- Pillar 1 -->
+                    <div class="card" style="flex: 1; border-top: 6px solid #2563eb; background: #eff6ff;">
+                        <h3 style="color: #2563eb; font-size: 1.4rem;">① スマホユーザー</h3>
+                        <div style="font-weight: bold; margin-bottom: 10px;">アプリによる自動吸い上げ</div>
+                        <p style="font-size: 0.95rem;">
+                            情報を吸い上げるための「サービス・アプリ」を活用。<br>
+                            MCSや連携アプリ経由で、日常生活に負担なくデータを自動送信。
+                        </p>
+                        <div class="text-small"
+                            style="background: white; padding: 8px; margin-top: 15px; border-radius: 4px;">
+                            Fitbit / Omron Connect
+                        </div>
+                    </div>
+
+                    <!-- Pillar 2 -->
+                    <div class="card" style="flex: 1; border-top: 6px solid #10b981; background: #f0fdf4;">
+                        <h3 style="color: #059669; font-size: 1.4rem;">② 非スマホ (デジタル)</h3>
+                        <div style="font-weight: bold; margin-bottom: 10px;">歩数計等のデバイス活用</div>
+                        <p style="font-size: 0.95rem;">
+                            スマホを持たない層には、デジタルデバイス（歩数計）を配布。<br>
+                            「デジタルデバイド」を解消し、正確な数値を計測・保持する。
+                        </p>
+                        <div class="text-small"
+                            style="background: white; padding: 8px; margin-top: 15px; border-radius: 4px;">
+                            Omron HJA-405T 等
+                        </div>
+                    </div>
+
+                    <!-- Pillar 3 -->
+                    <div class="card" style="flex: 1; border-top: 6px solid #f59e0b; background: #fffbeb;">
+                        <h3 style="color: #d97706; font-size: 1.4rem;">③ 手書き / 手入力</h3>
+                        <div style="font-weight: bold; margin-bottom: 10px;">非デジタル対応</div>
+                        <p style="font-size: 0.95rem;">
+                            デジタルデバイスを使用しない、あるいは使用拒否・困難なケース。<br>
+                            アナログな「手書き手帳」や、施設来院時の「聞き取り入力」で対応。
+                        </p>
+                        <div class="text-small"
+                            style="background: white; padding: 8px; margin-top: 15px; border-radius: 4px;">
+                            みんなの手帳 / 自己申告
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">6 / 18</div>
+        </div>
+
+        <!-- Slide 6: Comparison for Pillar 2 -->
+        <div class="slide">
+            <h2>6. Pillar 2 (非スマホ層) のデバイス選定</h2>
+            <div class="content">
+                <div class="card" style="margin-bottom: 5px;">
+                    <p style="font-size: 1.1rem; margin-bottom: 5px;"><strong>論点:</strong>
+                        非スマホユーザーもFitbit（外来時吸い上げ）に統一できないか？</p>
+                    <p style="font-size: 1rem;">
+                        Fitbitは30日分のデータ保持が可能ですが、<strong>「患者の変容」</strong>と<strong>「現場の運用負荷」</strong>の観点からOmronを採用しました。
+                    </p>
+                </div>
+
+                <table style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">項目</th>
+                            <th style="background-color: #2563eb; color: white; width: 42%;">Omron HJA-405T (候補)</th>
+                            <th style="background-color: #64748b; color: white; width: 42%;">Fitbit Inspire 3 (比較)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: bold;">運用フロー</td>
+                            <td style="background: #f0fdf4;"><strong>手帳転記運用</strong><br>患者が画面を見て記入</td>
+                            <td style="background: #fef2f2;"><strong>外来時同期運用</strong><br>来院時にスタッフがデータ吸出</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">メリット</td>
+                            <td>・患者自身が7日間の推移を画面で確認でき、<strong>行動変容</strong>に繋がる。<br>・来院時の事務負担が少ない。</td>
+                            <td>・転記ミスがない正確なデータ。<br>・30日分のメモリがあるため月1回受診でカバー可能。</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">デメリット</td>
+                            <td>・手書きや入力のミスが発生しうる。</td>
+                            <td>・<strong>現場負荷大:</strong> 受付での同期作業（ペアリング切替等）に時間がかかる。<br>・患者は「当日」しか画面で見れず、自己管理しにくい。</td>
+                        </tr>
+                        <tr style="border-top: 2px solid #cbd5e1;">
+                            <td style="font-weight: bold;">選定理由</td>
+                            <td style="font-weight: bold; color: #15803d;">「自己管理による意識向上」を優先</td>
+                            <td>現場オペレーションのパンク懸念により見送り</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="slide-number">7 / 18</div>
+        </div>
+
+        <!-- Slide 7: Pillar 1 Flow -->
+        <div class="slide">
+            <h2>7. 運用フロー：① スマホユーザー (Pillar 1)</h2>
+            <div class="content">
+                <p style="margin-bottom: 20px;">情報を吸い上げる「サービス/アプリ」を活用する層。</p>
+                <div class="two-columns">
+                    <div class="col card" style="border-top: 4px solid #00B0B9;"> <!-- Fitbit Teal -->
+                        <h3 style="color: #00B0B9;">Case: Fitbitユーザー</h3>
+                        <div class="flow-step">
+                            <div>⌚ <strong>Fitbit Inspire 3</strong> 装着</div>
+                        </div>
+                        <div class="flow-arrow">⬇</div>
+                        <div class="flow-step">
+                            <div>📱 <strong>Fitbit 公式アプリ</strong><br><span class="text-small">バックグラウンド同期</span></div>
+                        </div>
+                        <div class="flow-arrow">⬇</div>
+                        <div class="flow-step" style="background: #f0f9ff; border-color: #2563eb;">
+                            <div>☁ <strong>YaDoc / SOH</strong><br><span class="text-small">API自動連携</span></div>
+                        </div>
+                    </div>
+                    <div class="col card" style="border-top: 4px solid #005eb8;"> <!-- Omron Blue -->
+                        <h3 style="color: #005eb8;">Case: Omronユーザー</h3>
+                        <div class="flow-step">
+                            <div>🏃 <strong>Omron HJA-405T</strong> 装着</div>
+                        </div>
+                        <div class="flow-arrow">⬇</div>
+                        <div class="flow-step">
+                            <div>📱 <strong>Omron Connect</strong><br><span class="text-small">バックグラウンド連携</span></div>
+                        </div>
+                        <div class="flow-arrow">⬇</div>
+                        <div class="flow-step" style="background: #f0f9ff; border-color: #2563eb;">
+                            <div>☁ <strong>YaDoc / SOH</strong><br><span class="text-small">API自動連携</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">8 / 18</div>
+        </div>
+
+        <!-- Slide 8: Pillar 2 & 3 Flow -->
+        <div class="slide">
+            <h2>8. 運用フロー：② デバイス層 & ③ アナログ層</h2>
+            <div class="content">
+                <p style="margin-bottom: 20px;">デジタルデバイス配布、または完全にアナログな運用を行う層。</p>
+                <div class="two-columns">
+                    <div class="col card" style="border-top: 4px solid #10b981; background: #f0fdf4;">
+                        <h3 style="color: #059669;">② Pillar 2: デバイス配布</h3>
+                        <div class="flow-step">
+                            <div>🏃 <strong>Omron HJA-405T</strong> 装着</div>
+                        </div>
+                        <div class="flow-arrow" style="color:#059669;">⬇ 過去7日分表示</div>
+                        <div class="flow-step">
+                            <div>📝 <strong>記憶媒体</strong>として活用<br><span class="text-small">手帳へ転記 / 来院時確認</span></div>
+                        </div>
+                        <div class="flow-arrow" style="color:#059669;">⬇ 来院時</div>
+                        <div class="flow-step" style="background: white; border-color: #059669;">
+                            <div>🏥 施設iPadへ入力<br><span class="text-small">(スタッフ/本人)</span></div>
+                        </div>
+                    </div>
+                    <div class="col card" style="border-top: 4px solid #f59e0b; background: #fffbeb;">
+                        <h3 style="color: #d97706;">③ Pillar 3: 手書き/アナログ</h3>
+                        <div class="flow-step">
+                            <div>🏃 デバイス画面で歩数確認</div>
+                        </div>
+                        <div class="flow-arrow" style="color:#d97706;">⬇ 毎日/週1回</div>
+                        <div class="flow-step">
+                            <div>📝 <strong>みんなの手帳</strong>へ記入<br><span class="text-small">(自己管理・振り返り)</span></div>
+                        </div>
+                        <div class="flow-arrow" style="color:#d97706;">⬇ 来院時</div>
+                        <div class="flow-step" style="background: #fff; border-color: #d97706;">
+                            <div>🏥 施設iPadへ手入力<br><span class="text-small">(スタッフ/本人)</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">9 / 18</div>
+        </div>
+
+        <!-- Slide 9: Integrated Data Flow (NEW) -->
+        <div class="slide">
+            <h2>9. 統合データフローとプラットフォーム</h2>
+            <div class="content">
+                <div style="display: flex; height: 100%; gap: 15px;">
+                    <!-- Left: Sources -->
+                    <div style="flex: 2; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div class="card"
+                            style="padding: 10px; border-left: 5px solid #2563eb; background: #eff6ff; font-size: 1.3rem;">
+                            <strong>① Pillar 1</strong><br>スマホユーザー (App)
+                        </div>
+                        <div class="card"
+                            style="padding: 10px; border-left: 5px solid #10b981; background: #f0fdf4; font-size: 1.3rem;">
+                            <strong>② Pillar 2</strong><br>デバイス (Omron HJA-405T)
+                        </div>
+                        <div class="card"
+                            style="padding: 10px; border-left: 5px solid #d97706; background: #fffbeb; font-size: 1.3rem;">
+                            <strong>③ Pillar 3</strong><br>手書き / マニュアル
+                        </div>
+                    </div>
+
+                    <!-- Middle: Arrow aggregation -->
+                    <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+                        <div style="font-size: 6rem; color: #cbd5e1;">➡</div>
+                    </div>
+
+                    <!-- Right: Platform -->
+                    <div style="flex: 3;">
+                        <div class="card"
+                            style="height: 100%; border: 3px solid #2563eb; background: #eff6ff; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <h3 style="font-size: 2.8rem; margin-bottom: 20px;">YaDoc / SOH</h3>
+                            <p style="font-size: 1.4rem; color: #2563eb; font-weight: bold;">統合データベース</p>
+
+                            <div
+                                style="width: 90%; background: white; padding: 15px; margin-top: 20px; border-radius: 8px;">
+                                <ul style="text-align: left; font-size: 1.25rem; line-height: 1.6;">
+                                    <li>✅ <strong>ID一元管理:</strong> デバイス種別を問わず1人1IDで管理</li>
+                                    <li>✅ <strong>CSV一括出力:</strong> 解析用データセットを即時発行</li>
+                                    <li>✅ <strong>順守率モニタリング:</strong> 全パターンの記録状況を一覧表示</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">10 / 18</div>
+        </div>
+
+        <!-- Slide 10: Platform Consideration -->
+        <div class="slide">
+            <h2>10. 検討プロセス：システム基盤の候補比較</h2>
+            <div class="content">
+                <p style="margin-bottom: 15px;">
+                    研究用途（PHR管理）として実績のある複数のサービス候補を比較します。
+                </p>
+                <table style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th>サービス名</th>
+                            <th>提供企業/種別</th>
+                            <th>デバイス連携</th>
+                            <th>特徴・課題</th>
+                            <th>検討ポイント</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #eff6ff;">
+                            <td style="font-weight: bold; color: #2563eb;">YaDoc / SOH</td>
+                            <td>インテグリティ・<br>ヘルスケア</td>
+                            <td><strong>◎ マルチ対応</strong><br>(Omron, Fitbit, etc)</td>
+                            <td>・PHRとして患者自身がデータ閲覧可<br>・研究用データ出力が容易</td>
+                            <td>データ統合力・PHR機能</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">Welby マイカルテ</td>
+                            <td>Welby</td>
+                            <td><strong>○ マルチ対応</strong><br>(各社機器連携)</td>
+                            <td>・生活習慣病・癌領域で実績多数<br>・疾患管理機能が豊富</td>
+                            <td>疾患特化機能・実績</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">バイタルリンク</td>
+                            <td>帝人ファーマ</td>
+                            <td><strong>△ 一部対応</strong><br>(バイタル機器中心)</td>
+                            <td>・多職種連携(地域包括ケア)に強み<br>・歩数計連携の柔軟性は要確認</td>
+                            <td>多職種連携・地域包括</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">kintone</td>
+                            <td>サイボウズ</td>
+                            <td><strong>× なし</strong><br>(要API開発)</td>
+                            <td>・汎用DBとして自由度高い<br>・データ自動取込には開発費発生</td>
+                            <td>カスタマイズ性・開発費</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">REDCap</td>
+                            <td>(大学・研究機関)</td>
+                            <td><strong>× なし</strong><br>(手入力/CSV)</td>
+                            <td>・研究用EDCのスタンダード<br>・PHR(患者還元)機能は弱い</td>
+                            <td>研究データ管理特化</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="card" style="margin-top: 15px; background: #f8fafc; border-color: #cbd5e1; padding: 10px;">
+                    <p style="margin: 0; font-size: 0.9rem;">
+                        <strong>検討の視点:</strong> 研究の目的（PHRによる行動変容 vs 純粋なデータ収集）や、連携したいデバイスの種類によって最適な基盤を選択する必要があります。
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">11 / 18</div>
+        </div>
+
+        <!-- Slide 11: Adopted Systems -->
+        <div class="slide">
+            <h2>11. 候補詳細：YaDoc / Smart One Health</h2>
+            <div class="content">
+                <div class="two-columns">
+                    <div class="col">
+                        <h3>主な候補としての理由</h3>
+                        <ul>
+                            <li><strong>臨床研究での実績:</strong> がん研有明病院、関西医科大学など多数の導入実績。</li>
+                            <li><strong>セキュリティ:</strong> 医療情報の取り扱いに準拠した堅牢なセキュリティ基準。</li>
+                            <li><strong>マルチデバイス連携:</strong> <strong>Omron Connect</strong>、Fitbit、Apple
+                                Healthなど多様なソースからのデータ集約に対応。</li>
+                        </ul>
+                    </div>
+                    <div class="col card">
+                        <h3>主な機能</h3>
+                        <ul style="font-size: 1.1rem;">
+                            <li><strong>患者モニタリング画面:</strong> 対象者一覧の順守率、バイタル推移をグラフで可視化。</li>
+                            <li><strong>アラート機能:</strong> 報告漏れや異常値を検知してアラート表示。</li>
+                            <li><strong>データ出力:</strong> 解析用のCSVデータとして一括エクスポート可能。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="https://www.yadoc.jp/" target="_blank" style="margin-right: 30px; font-size: 1.2rem;">YaDoc
+                        公式サイトを見る ↗</a>
+                    <a href="https://www.smartonehealth.jp/" target="_blank" style="font-size: 1.2rem;">Smart One Health
+                        公式サイトを見る ↗</a>
+                </div>
+            </div>
+            <div class="slide-number">12 / 18</div>
+        </div>
+
+
+
+        <!-- Slide 12: Budget Simulation -->
+        <div class="slide">
+            <h2>12. [参考] 規模別 予算試算 (全員配布の場合)</h2>
+            <div class="content">
+                <p style="margin-bottom: 10px;">前提: OmronとFitbitを 1:1 で導入</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>費目区分</th>
+                            <th>200名規模</th>
+                            <th>300名規模</th>
+                            <th>400名規模</th>
+                            <th>500名規模</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: bold;">台数 (各)</td>
+                            <td>100台</td>
+                            <td>150台</td>
+                            <td>200台</td>
+                            <td>250台</td>
+                        </tr>
+                        <tr>
+                            <td>Omron (各半数)</td>
+                            <td>¥660,000 <span class="text-small">(100台)</span></td>
+                            <td>¥990,000 <span class="text-small">(150台)</span></td>
+                            <td>¥1,320,000 <span class="text-small">(200台)</span></td>
+                            <td>¥1,650,000 <span class="text-small">(250台)</span></td>
+                        </tr>
+                        <tr>
+                            <td>Fitbit (各半数)</td>
+                            <td>¥1,280,000 <span class="text-small">(100台)</span></td>
+                            <td>¥1,920,000 <span class="text-small">(150台)</span></td>
+                            <td>¥2,560,000 <span class="text-small">(200台)</span></td>
+                            <td>¥3,200,000 <span class="text-small">(250台)</span></td>
+                        </tr>
+                        <tr style="background: #e0f2fe;">
+                            <td>システム費 <span class="text-small"
+                                    style="color: #ef4444; display: block; font-weight: normal;">(※要 見積取得)</span></td>
+                            <td>¥1,116,000 <span class="text-small">(200名)</span></td>
+                            <td>¥1,476,000 <span class="text-small">(300名)</span></td>
+                            <td>¥1,836,000 <span class="text-small">(400名)</span></td>
+                            <td>¥2,196,000 <span class="text-small">(500名)</span></td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td>総額 (年額)</td>
+                            <td>約 306万円</td>
+                            <td>約 439万円</td>
+                            <td>約 572万円</td>
+                            <td>約 705万円</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div
+                    style="background: #fff1f2; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #fda4af;">
+                    <div style="color: #be123c; font-weight: bold; margin-bottom: 5px;">⚠ システム費について</div>
+                    <span
+                        style="font-size: 0.95rem;">上記は通常プラン定価での試算です。<strong>アカデミアプラン（研究用特別価格）</strong>の適用による減額が見込まれるため、正式な見積もり取得が必須です。</span>
+                </div>
+            </div>
+            <div class="slide-number">13 / 18</div>
+        </div>
+
+        <!-- Slide 13: Interactive Simulator (NEW) -->
+        <div class="slide">
+            <h2>13. 予算シミュレーター (リアルタイム試算)</h2>
+            <div class="content">
+                <p class="text-center" style="margin-bottom: 20px;">
+                    予算100万円・20施設での配布数をシミュレーションします。<br>
+                    <span class="text-small">※スマホユーザーはアプリ利用(無料)と仮定</span>
+                </p>
+
+                <div style="display: flex; gap: 30px; height: 100%;">
+                    <!-- Controls -->
+                    <div class="card" style="flex: 1; padding: 20px; background: #f8fafc;">
+                        <h3 style="font-size: 1.4rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px;">
+                            パラメーター設定
+                        </h3>
+
+                        <!-- Device Selection -->
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">比較対象デバイス
+                                (価格参照)</label>
+                            <select id="simDevice"
+                                style="width: 100%; padding: 8px; font-size: 1rem; border-radius: 4px; border: 1px solid #cbd5e1;"
+                                onchange="updateSim()">
+                                <option value="1000">山佐 EX-150 (約1,000円)</option>
+                                <option value="1100">Tanita PD-647 (約1,100円)</option>
+                                <option value="1800">Omron HJ-325 (約1,800円)</option>
+                                <option value="6600">Omron HJA-405T (約6,600円)</option>
+                                <option value="12800">Fitbit Inspire 3 (約12,800円)</option>
+                            </select>
+                        </div>
+
+                        <!-- Facilities -->
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">対象施設数: <span
+                                    id="valFacilities" class="text-accent">20</span>ヶ所</label>
+                            <input type="range" id="rngFacilities" min="1" max="50" step="1" value="20"
+                                style="width: 100%;" oninput="updateSim()">
+                        </div>
+
+                        <!-- Users per Facility -->
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">1施設あたりの人数: <span
+                                    id="valUsers" class="text-accent">50</span>名</label>
+                            <input type="range" id="rngUsers" min="10" max="100" step="5" value="50"
+                                style="width: 100%;" oninput="updateSim()">
+                            <div class="text-small text-center">総対象者数: <span id="valTotalUsers">1000</span>名</div>
+                        </div>
+
+                        <!-- Smartphone Ratio -->
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">スマホユーザー率: <span
+                                    id="valRatio" class="text-accent">50</span>%</label>
+                            <input type="range" id="rngRatio" min="0" max="100" step="5" value="50" style="width: 100%;"
+                                oninput="updateSim()">
+                            <div class="text-small text-center"
+                                style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                <span>📱スマホ: <span id="valSmart">500</span>名</span>
+                                <span>🚶非スマホ: <span id="valNonSmart"
+                                        style="color: #d97706; font-weight: bold;">500</span>名</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Result -->
+                    <div class="card"
+                        style="flex: 1; padding: 20px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                        <h3 style="font-size: 1.4rem;">試算結果 (デバイス購入費)</h3>
+
+                        <div style="margin: 20px 0;">
+                            <div style="font-size: 1rem; color: #64748b; margin-bottom: 5px;">必要予算</div>
+                            <div id="simCost" style="font-size: 3.5rem; font-weight: bold; color: #334155;">¥500,000
+                            </div>
+                        </div>
+
+                        <!-- Meter -->
+                        <div
+                            style="width: 100%; height: 30px; background: #e2e8f0; border-radius: 15px; overflow: hidden; position: relative; margin-bottom: 10px;">
+                            <div id="simBar"
+                                style="width: 50%; height: 100%; background: #10b981; transition: width 0.3s, background 0.3s;">
+                            </div>
+                            <div
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #334155;">
+                                予算上限: ¥1,000,000
+                            </div>
+                        </div>
+
+                        <div id="simMessage"
+                            style="font-weight: bold; font-size: 1.2rem; min-height: 1.5em; color: #10b981;">
+                            予算内です (残り ¥500,000)
+                        </div>
+
+                        <div style="margin-top: 30px; border-top: 1px dashed #cbd5e1; padding-top: 20px;">
+                            <p style="margin: 5px 0;"><strong>1施設あたりの配布数:</strong></p>
+                            <p style="font-size: 1.5rem;">平均 <span id="valPerFacility" class="text-highlight">25</span>
+                                台</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">14 / 18</div>
+        </div>
+
+        <div class="slide">
+            <h2>14. デバイス候補詳細比較</h2>
+            <div class="content">
+                <p style="margin-bottom: 10px;">
+                    シミュレーターで試算可能な全候補モデルのスペック比較です。
+                    <strong>「運用実現性（メモリ・通信）」</strong>と<strong>「コスト」</strong>のバランスからご判断ください。
+                </p>
+
+                <table style="font-size: 0.8rem; text-align: center; width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="width: 10%; background: #f1f5f9;"></th>
+                            <th style="width: 16%; background: #e2e8f0;">① Yamasa<br>EX-150</th>
+                            <th style="width: 16%; background: #e2e8f0;">② Tanita<br>PD-647</th>
+                            <th style="width: 16%; background: #e2e8f0;">③ Omron<br>HJ-325</th>
+                            <th style="width: 20%; background: #dbeafe; border: 2px solid #2563eb; color: #1e40af;">④
+                                Omron<br>HJA-405T</th>
+                            <th style="width: 20%; background: #f3e8ff; border: 2px solid #9333ea; color: #6b21a8;">⑤
+                                Fitbit<br>Inspire 3</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: bold; background: #f8fafc;">画像</td>
+                            <td style="padding: 10px;">
+                                <div
+                                    style="width: 60px; height: 60px; background: #94a3b8; margin: auto; display: flex; align-items: center; justify-content: center; color: white; border-radius:4px;">
+                                    No Image</div>
+                            </td>
+                            <td style="padding: 10px;">
+                                <div
+                                    style="width: 60px; height: 60px; background: #94a3b8; margin: auto; display: flex; align-items: center; justify-content: center; color: white; border-radius:4px;">
+                                    No Image</div>
+                            </td>
+                            <td style="padding: 10px;">
+                                <div
+                                    style="width: 60px; height: 60px; background: #94a3b8; margin: auto; display: flex; align-items: center; justify-content: center; color: white; border-radius:4px;">
+                                    No Image</div>
+                            </td>
+                            <td style="padding: 10px; border-left: 2px solid #2563eb; border-right: 2px solid #2563eb;">
+                                <img src="file:///C:/Users/scdc/.gemini/antigravity/brain/61e9ec38-2c7c-4901-b727-b873ce3fd899/uploaded_image_1_1769039634322.png"
+                                    style="width: 60px; height: auto;" alt="HJA-405T"></td>
+                            <td style="padding: 10px; border-left: 2px solid #9333ea; border-right: 2px solid #9333ea;">
+                                <div
+                                    style="width: 60px; height: 60px; background: #d8b4fe; margin: auto; display: flex; align-items: center; justify-content: center; color: white; border-radius:4px;">
+                                    Fitbit</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold; background: #f8fafc;">参考価格</td>
+                            <td>¥1,000</td>
+                            <td>¥1,100</td>
+                            <td>¥1,800</td>
+                            <td
+                                style="font-weight: bold; color: #1e40af; border-left: 2px solid #2563eb; border-right: 2px solid #2563eb; background: #eff6ff;">
+                                ¥6,600</td>
+                            <td
+                                style="font-weight: bold; color: #6b21a8; border-left: 2px solid #9333ea; border-right: 2px solid #9333ea; background: #faf5ff;">
+                                ¥12,800</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold; background: #f8fafc;">メモリ</td>
+                            <td>なし/当日</td>
+                            <td>当日のみ</td>
+                            <td>過去7日<br><span style="font-size:0.7rem; color:red;">※画面操作難</span></td>
+                            <td
+                                style="border-left: 2px solid #2563eb; border-right: 2px solid #2563eb; background: #eff6ff;">
+                                <strong>過去7日</strong><br><span style="font-size:0.7rem;">(一覧表示可)</span></td>
+                            <td
+                                style="border-left: 2px solid #9333ea; border-right: 2px solid #9333ea; background: #faf5ff;">
+                                <strong>過去30日</strong><br><span style="font-size:0.7rem;">(アプリ同期)</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold; background: #f8fafc;">通信</td>
+                            <td>× なし</td>
+                            <td>× なし</td>
+                            <td>× なし</td>
+                            <td
+                                style="border-left: 2px solid #2563eb; border-right: 2px solid #2563eb; background: #eff6ff;">
+                                <strong>○ Bluetooth</strong><br><span style="font-size:0.7rem;">(スマホ連携可)</span></td>
+                            <td
+                                style="border-left: 2px solid #9333ea; border-right: 2px solid #9333ea; background: #faf5ff;">
+                                <strong>◎ Bluetooth</strong><br><span style="font-size:0.7rem;">(自動同期)</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold; background: #f8fafc;">特徴</td>
+                            <td>最小機能</td>
+                            <td>大画面・腰</td>
+                            <td>薄型</td>
+                            <td
+                                style="border-left: 2px solid #2563eb; border-right: 2px solid #2563eb; background: #eff6ff;">
+                                <strong>バランス良</strong><br>手帳転記に最適</td>
+                            <td
+                                style="border-left: 2px solid #9333ea; border-right: 2px solid #9333ea; background: #faf5ff;">
+                                <strong>高機能</strong><br>睡眠・心拍等</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="card" style="margin-top: 20px; background: #fff7ed; border-color: #fdba74;">
+                    <p style="margin: 0; font-weight: bold; color: #c2410c;">
+                        結論: <br>
+                        単なる「歩数計」ではなく、高齢者が自力で記録を継続するための「記憶媒体」としてのコストが必要です。
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">15 / 18</div>
+        </div>
+
+        <!-- Slide 15: Procurement Strategy -->
+        <div class="slide">
+            <h2>15. 調達戦略・購入ルート案</h2>
+            <div class="content">
+                <p>研究機関としての信頼性と、大量導入による価格メリット（ボリュームディスカウント）を重視した選定。</p>
+                <table style="font-size: 0.95rem;">
+                    <thead>
+                        <tr>
+                            <th>チャネル</th>
+                            <th>特徴</th>
+                            <th>Fitbit対応</th>
+                            <th>リンク</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <tr>
+                            <td style="font-weight:bold;">JMDC<br>(Fitbit 法人向け)</td>
+                            <td>Fitbitの国内正規代理店。<br>健康経営・研究用途での導入実績が豊富。</td>
+                            <td style="color:#15803d; font-weight:bold;">◎ 候補</td>
+                            <td><a href="https://fitbit.jmdc.co.jp/" target="_blank">サービスサイト</a></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:bold;">Amazon ビジネス</td>
+                            <td>法人価格設定がある場合も。<br>小回りは利くが大量在庫確保は要確認。</td>
+                            <td>○</td>
+                            <td><a href="https://business.amazon.co.jp/" target="_blank">Business TOP</a></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:bold;">Google Store<br>(法人窓口)</td>
+                            <td>メーカー直販の安心感。<br>セール時期に合わせた購入なら最安の可能性。</td>
+                            <td>○</td>
+                            <td><a href="https://store.google.com/jp/?hl=ja" target="_blank">ストア TOP</a></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:bold;">大学生協 / 指定業者</td>
+                            <td>学内手続きがスムーズ。<br>価格競争力は上記代理店と比較が必要。</td>
+                            <td>△</td>
+                            <td><a href="https://www.univ.coop/" target="_blank">大学生協連</a></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:bold;">オムロン ヘルスケア</td>
+                            <td><strong>マニュアル入力運用のため直接交渉</strong>。<br>学術研究用途として割引相談の余地あり。</td>
+                            <td>-</td>
+                            <td><a href="https://www.healthcare.omron.co.jp/contact/" target="_blank">問合せ窓口</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="procurement-box" style="margin-top: 20px; padding: 15px;">
+                    <div class="procurement-title">💰 コスト削減目標</div>
+                    <ul>
+                        <li><strong>デバイス費:</strong> 100台以上のまとめ買いで <strong>10%～15% OFF</strong> を目標とする。</li>
+                        <li><strong>システム費:</strong> アカデミア価格（研究用途）の適用を交渉する。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-number">16 / 18</div>
+        </div>
+
+        <!-- Slide 16: Schedule -->
+        <div class="slide">
+            <h2>16. 導入スケジュール</h2>
+            <div class="content">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot">1</div>
+                        <div class="timeline-content">
+                            <h4>方針決定・予算枠確保 (Month 0)</h4>
+                            <p>本会議での方針決定。予算枠の確保。</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot">2</div>
+                        <div class="timeline-content">
+                            <h4>見積取得・ベンダー選定 (Month 1)</h4>
+                            <p>Amazon等への相見積もり実施。YaDoc契約手続き。</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot">3</div>
+                        <div class="timeline-content">
+                            <h4>環境構築・マニュアル作成 (Month 2)</h4>
+                            <p>システム初期設定、患者ID発行。手帳転記用マニュアルの整備。</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot">4</div>
+                        <div class="timeline-content">
+                            <h4>運用開始・初期説明会 (Month 3～)</h4>
+                            <p>対象者へのデバイス配布、アプリ導入支援会、運用スタート。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">17 / 18</div>
+        </div>
+
+        <!-- Slide 17: Next Steps -->
+        <div class="slide">
+            <h2>17. 承認依頼・ネクストステップ</h2>
+            <div class="content">
+                <div class="card" style="border: 2px solid #2563eb; padding: 40px; text-align: center;">
+                    <h3 style="margin-bottom: 30px; font-size: 2rem;">承認依頼事項</h3>
+                    <ul
+                        style="text-align: left; display: inline-block; font-size: 2.2rem; line-height: 1.8; font-weight: bold;">
+                        <li>本導入計画（ハイブリッドモデル）の方針決定</li>
+                        <li>採用システム・デバイスの選定・絞り込み</li>
+                        <li>各ベンダー (JMDC, Amazon等) への正式見積もり依頼</li>
+                    </ul>
+                </div>
+                <div style="text-align: center; margin-top: 40px;">
+                    <p style="font-size: 1.2rem; color: #64748b;">ご審議のほど、よろしくお願いいたします。</p>
+                </div>
+            </div>
+            <div class="slide-number">18 / 18</div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button id="prevBtn" onclick="prevSlide()" disabled>← 前へ</button>
+        <button id="nextBtn" onclick="nextSlide()">次へ →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        function updateSlides() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+            prevBtn.disabled = currentSlide === 0;
+            if (currentSlide === slides.length - 1) {
+                nextBtn.innerText = "終了";
+                nextBtn.disabled = true;
+            } else {
+                nextBtn.innerText = "次へ →";
+                nextBtn.disabled = false;
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlides();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlides();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Simulation Logic
+        function updateSim() {
+            // Inputs
+            const price = parseInt(document.getElementById('simDevice').value);
+            const facilities = parseInt(document.getElementById('rngFacilities').value);
+            const usersPerFacility = parseInt(document.getElementById('rngUsers').value);
+            const ratio = parseInt(document.getElementById('rngRatio').value);
+            const budget = 1000000;
+
+            // Calculations
+            const totalUsers = facilities * usersPerFacility;
+            const smartUsers = Math.round(totalUsers * (ratio / 100));
+            const nonSmartUsers = totalUsers - smartUsers; // Device needed
+            const totalCost = nonSmartUsers * price;
+            const devicesPerFacility = Math.ceil(nonSmartUsers / facilities);
+
+            // Update UI Numbers
+            document.getElementById('valFacilities').innerText = facilities;
+            document.getElementById('valUsers').innerText = usersPerFacility;
+            document.getElementById('valTotalUsers').innerText = totalUsers;
+            document.getElementById('valRatio').innerText = ratio;
+            document.getElementById('valSmart').innerText = smartUsers;
+            document.getElementById('valNonSmart').innerText = nonSmartUsers;
+            document.getElementById('valPerFacility').innerText = devicesPerFacility;
+
+            // Update Cost Display
+            const costElem = document.getElementById('simCost');
+            costElem.innerText = "¥" + totalCost.toLocaleString();
+
+            // Status Bar & Color
+            const bar = document.getElementById('simBar');
+            const msg = document.getElementById('simMessage');
+            const percentage = Math.min((totalCost / budget) * 100, 100);
+
+            bar.style.width = percentage + "%";
+
+            if (totalCost <= budget) {
+                bar.style.background = "#10b981"; // Green
+                costElem.style.color = "#334155";
+                const remaining = budget - totalCost;
+                msg.innerText = "予算内です (残り ¥" + remaining.toLocaleString() + ")";
+                msg.style.color = "#10b981";
+            } else {
+                bar.style.background = "#ef4444"; // Red
+                costElem.style.color = "#ef4444";
+                const over = totalCost - budget;
+                msg.innerText = "予算オーバー! (不足 ¥" + over.toLocaleString() + ")";
+                msg.style.color = "#ef4444";
+            }
+        }
+
+        // Init Sim
+        window.onload = updateSim;
+    </script>
+
+</body>
+
+</html>
